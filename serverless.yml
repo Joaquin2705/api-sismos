@@ -1,0 +1,37 @@
+org: joemir27
+service: api-web-scraping
+
+provider:
+  name: aws
+  runtime: python3.12
+  memorySize: 1024
+  timeout: 30
+  iam:
+    role: arn:aws:iam::245604380054:role/LabRole
+  environment:
+    SISMOS_TABLE: SismosIGP
+    IGP_URL: https://ultimosismo.igp.gob.pe/ultimo-sismo/sismos-reportados
+
+functions:
+  scrapSismos:
+    handler: ScrapSismos.lambda_handler
+    description: "Scrapea los 10 últimos sismos del IGP y los guarda en DynamoDB"
+    events:
+      - http:
+          path: sismos/actualizar
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    TablaSismos:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.SISMOS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
